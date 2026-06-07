@@ -122,9 +122,13 @@ def fetch_foreign_holding_rate(ticker: str) -> Optional[float]:
         end_str = _date_str(end_date)
 
         # get_exhaustion_rates_of_foreign_investment_by_date gives foreign holding info
-        df = stock.get_exhaustion_rates_of_foreign_investment_by_date(
-            start_str, end_str, ticker
-        )
+        try:
+            df = stock.get_exhaustion_rates_of_foreign_investment_by_date(
+                start_str, end_str, ticker
+            )
+        except Exception:
+            return None
+
         if df is None or df.empty:
             return None
 
@@ -156,9 +160,15 @@ def fetch_short_selling(
     try:
         from pykrx import stock
 
-        df = stock.get_market_short_sell_by_date(start_date, end_date, ticker)
+        df = stock.get_shorting_volume_by_date(start_date, end_date, ticker)
         if df is None or df.empty:
             logger.warning(f"[{ticker}] No short-sell data for {start_date}~{end_date}")
+            return pd.DataFrame()
+
+        # Normalize column: pykrx may return '거래량' or '공매도' depending on version
+        vol_candidates = [c for c in df.columns if "거래량" in c or "공매도" in c or "volume" in c.lower()]
+        if not vol_candidates:
+            logger.warning(f"[{ticker}] Unexpected shorting columns: {df.columns.tolist()}")
             return pd.DataFrame()
 
         df.index.name = "date"
@@ -168,7 +178,7 @@ def fetch_short_selling(
         return df
 
     except Exception as e:
-        logger.error(f"[{ticker}] fetch_short_selling error: {e}")
+        logger.warning(f"[{ticker}] fetch_short_selling unavailable: {e}")
         return pd.DataFrame()
 
 
