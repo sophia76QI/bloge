@@ -1,0 +1,6 @@
+pykrx
+dart-fss
+pandas
+numpy
+python-dotenv
+anthropic
