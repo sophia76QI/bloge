@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Environment
+.env
+
+# Generated outputs (keep samples via explicit git add)
+output/blog_*.md
+output/threads_*.txt
+output/results_*.json
