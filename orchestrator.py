@@ -117,7 +117,7 @@ def _enhance_with_llm(
         )
 
         message = client.messages.create(
-            model="claude-opus-4-8",
+            model="claude-opus-4-5",
             max_tokens=4096,
             messages=[
                 {"role": "user", "content": prompt},
