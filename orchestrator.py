@@ -1,29 +1,27 @@
 """
-orchestrator.py - Main Orchestrator for 외국인 순매수 셜록홈즈
+orchestrator.py - 콘텐츠 멀티에이전트 시스템 오케스트레이터
 
-Coordinates the three specialist agents:
-  1. collector  → fetch KRX/DART data for universe
-  2. detective  → screen for lead-lag patterns, score hypotheses
-  3. publisher  → format blog post + threads post
+이미지 구조:
+  PHASE 1 (순차)  : Blog Writer (Opus)          → output/blog.md
+  PHASE 2 (순차)  : Reviewer (Sonnet)            → output/blog_reviewed.md
+  PHASE 3 (병렬)  : Newsletter / Threads / IG    → output/{newsletter,threads,instagram}.md
+  PHASE 4 (최종)  : Notion Uploader (Sonnet+MCP) → Notion 페이지
 
-Usage:
-  python orchestrator.py [--tickers 005930 000660 ...] [--days 20]
-                         [--top-n 5] [--output-dir output]
-
-Requires:
-  .env with DART_API_KEY (optional: ANTHROPIC_API_KEY for LLM narrative)
+에이전트 간 직접 통신 없음 — output/ 공유 파일로만 연결.
+단계 실행 · 산출물 검증 · 실패 시 해당 단계 재시도 · 진행 보고.
 """
 
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import logging
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,14 +29,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger("orchestrator")
 
-# ── Load .env ────────────────────────────────────────────────────────────────
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass  # python-dotenv not installed; rely on environment variables
+    pass
 
-# ── Default universe: 30 KOSPI blue-chips ────────────────────────────────────
 DEFAULT_UNIVERSE = [
     "005930",  # 삼성전자
     "000660",  # SK하이닉스
@@ -72,163 +68,195 @@ DEFAULT_UNIVERSE = [
     "251270",  # 넷마블
 ]
 
-ORCHESTRATOR_SYSTEM = """
-너는 '외국인 순매수 셜록홈즈'의 총괄 팀장이다.
-3명의 전문가(수집/추리/출력)를 지휘해 매일 리드마그넷 1건을 만든다.
 
-[절대 규칙]
-1. 모든 수치에 출처 위계 [1차/2차/3차/추측]를 붙인다.
-2. 데이터가 없으면 추정하지 말고 "데이터 없음"으로 표기한다. (환각 금지)
-3. 결론은 "판정"이 아니라 "확신도 %를 붙인 가설"로만 출력한다.
-4. 어떤 기업·기관에도 위법(내부정보 이용 등)을 단정하지 않는다.
-5. 모든 데이터는 시점(기준일)을 명시한다. (예: KRX 기준 T-1 종가)
-
-[워크플로우]
-1) 수집 에이전트에게 대상 유니버스의 외국인 수급·공매도·대차·공시 데이터를 요청
-2) 추리 에이전트에게 선행 매수 패턴 스크리닝 + 상위 종목 심층 추리를 요청
-3) 출력 에이전트에게 리드마그넷(블로그/스레드) 변환을 요청
-4) 면책 조항을 모든 산출물 하단에 강제 삽입
-""".strip()
+def _print_phase(n: int, label: str, mode: str = "") -> None:
+    tag = f" ({mode})" if mode else ""
+    print(f"\n{'='*60}")
+    print(f"  PHASE {n}{tag}: {label}")
+    print(f"{'='*60}")
 
 
-def _enhance_with_llm(
-    blog_post: str,
-    results: list,
-) -> str:
-    """
-    Optionally enhance the blog post narrative using Anthropic API.
-    Falls back to raw template output if ANTHROPIC_API_KEY is not set.
-    """
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        logger.info("ANTHROPIC_API_KEY not set — using template output (no LLM enhancement)")
-        return blog_post
+def _verify_output(path: Path, phase: str) -> bool:
+    if path.exists() and path.stat().st_size > 100:
+        logger.info(f"[{phase}] ✅ {path.name} OK ({path.stat().st_size} bytes)")
+        return True
+    logger.warning(f"[{phase}] ⚠️ {path.name} missing or too small")
+    return False
 
+
+def run_phase1(results: list, output_dir: str, run_date: str, max_retries: int = 2) -> bool:
+    """PHASE 1 순차: Blog Writer (Opus) → output/blog.md"""
+    _print_phase(1, "Blog Writer (Opus) — SEO 장문 블로그 작성", "순차")
+    from agents.blog_writer import run as blog_run
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            blog_run(results, output_dir=output_dir, run_date=run_date)
+            if _verify_output(Path(output_dir) / "blog.md", "PHASE 1"):
+                return True
+        except Exception as e:
+            logger.error(f"[PHASE 1] Attempt {attempt} failed: {e}")
+    return False
+
+
+def run_phase2(output_dir: str, max_retries: int = 2) -> bool:
+    """PHASE 2 순차: Reviewer (Sonnet) → output/blog_reviewed.md"""
+    _print_phase(2, "Reviewer (Sonnet) — 품질 검수·개선", "순차")
+    from agents.reviewer import run as reviewer_run
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            reviewer_run(output_dir=output_dir)
+            if _verify_output(Path(output_dir) / "blog_reviewed.md", "PHASE 2"):
+                return True
+        except Exception as e:
+            logger.error(f"[PHASE 2] Attempt {attempt} failed: {e}")
+    return False
+
+
+def _run_single_phase3_agent(agent_name: str, output_dir: str) -> tuple[str, bool]:
     try:
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=api_key)
-        prompt = (
-            "다음은 외국인 순매수 셜록홈즈 분석 리포트 초안입니다. "
-            "다빈치힐스 브랜드 톤(친근+전문, 단정 금지)으로 자연스럽게 다듬어 주세요. "
-            "수치·출처 위계·면책 조항은 절대 삭제하지 마세요. "
-            "확신도 %와 '가설'이라는 표현은 반드시 유지하세요.\n\n"
-            f"---\n{blog_post}"
-        )
-
-        message = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=4096,
-            messages=[
-                {"role": "user", "content": prompt},
-            ],
-            system=ORCHESTRATOR_SYSTEM,
-        )
-        enhanced = message.content[0].text if message.content else blog_post
-        logger.info("LLM narrative enhancement complete.")
-        return enhanced
-
+        if agent_name == "newsletter":
+            from agents.newsletter_writer import run
+        elif agent_name == "threads":
+            from agents.threads_writer import run
+        elif agent_name == "instagram":
+            from agents.instagram_writer import run
+        else:
+            return agent_name, False
+        run(output_dir=output_dir)
+        out_file = Path(output_dir) / f"{agent_name}.md"
+        ok = _verify_output(out_file, f"PHASE 3/{agent_name}")
+        return agent_name, ok
     except Exception as e:
-        logger.warning(f"LLM enhancement failed ({e}), using template output")
-        return blog_post
+        logger.error(f"[PHASE 3/{agent_name}] Error: {e}")
+        return agent_name, False
+
+
+def run_phase3(output_dir: str) -> dict[str, bool]:
+    """PHASE 3 병렬: Newsletter / Threads / Instagram (Sonnet×3)"""
+    _print_phase(3, "Newsletter · Threads · Instagram (Sonnet×3)", "병렬 동시 실행")
+    agents = ["newsletter", "threads", "instagram"]
+    results_map: dict[str, bool] = {}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(_run_single_phase3_agent, a, output_dir): a for a in agents}
+        for future in concurrent.futures.as_completed(futures):
+            agent_name, ok = future.result()
+            results_map[agent_name] = ok
+            status = "✅" if ok else "❌"
+            logger.info(f"[PHASE 3] {status} {agent_name}")
+
+    return results_map
+
+
+def run_phase4(output_dir: str, run_date: str) -> dict:
+    """PHASE 4 최종: Notion Uploader (Sonnet+MCP)"""
+    _print_phase(4, "Notion Uploader (Sonnet + MCP: notion-create-pages)", "최종")
+    from agents.notion_uploader import run as notion_run
+    return notion_run(output_dir=output_dir, run_date=run_date)
 
 
 def main(
-    tickers: List[str] | None = None,
+    tickers: Optional[List[str]] = None,
     days: int = 20,
     top_n: int = 5,
     output_dir: str = "output",
     z_threshold: float = 2.0,
     lookforward_days: int = 20,
-    enhance_llm: bool = True,
+    skip_notion: bool = False,
 ) -> None:
     print("=" * 60)
-    print("外国人 순매수 셜록홈즈 — 멀티에이전트 오케스트레이터")
+    print("  콘텐츠 멀티에이전트 시스템 — 외국인 순매수 셜록홈즈")
     print("=" * 60)
-    print(ORCHESTRATOR_SYSTEM)
-    print("=" * 60)
+    print("  에이전트는 인자가 아니라 output/ 공유 파일을 읽고 씀")
+    print("  Orchestrator: CLAUDE.md + agents/orchestrator.md")
+    print("  단계 실행 · 산출물 검증 · 실패 시 재시도 · 진행 보고")
 
     tickers = tickers or DEFAULT_UNIVERSE
-    run_date = datetime.today().strftime("%Y%m%d_%H%M%S")
-    run_date_display = datetime.today().strftime("%Y년 %m월 %d일")
+    run_date = datetime.today().strftime("%Y년 %m월 %d일")
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    # ── STEP 1: Collect ──────────────────────────────────────────
-    logger.info(f"[PHASE 1] 수집 에이전트 시작 — {len(tickers)}개 종목, {days}일")
+    # ── 데이터 수집 + 추리 (기존 파이프라인) ─────────────────────
+    print(f"\n{'─'*60}")
+    print(f"  [사전] 수집 에이전트 + 추리 에이전트 실행")
+    print(f"{'─'*60}")
+    logger.info(f"Universe: {len(tickers)}개 종목 / {days}일 / top-{top_n}")
+
     from agents.collector import collect_universe
-
-    universe_data = collect_universe(tickers, days=days)
-    logger.info(f"[PHASE 1] 수집 완료 — {len(universe_data)}개 종목")
-
-    # ── STEP 2: Detect / Score ───────────────────────────────────
-    logger.info(f"[PHASE 2-3] 추리 에이전트 시작 — Z>{z_threshold}, 선행 {lookforward_days}일")
     from agents.detective import screen_universe
 
+    universe_data = collect_universe(tickers, days=days)
     results = screen_universe(
         universe_data,
         z_threshold=z_threshold,
         lookforward_days=lookforward_days,
         top_n=top_n,
     )
-    logger.info(f"[PHASE 2-3] 추리 완료 — 상위 {len(results)}개 종목 선별")
 
-    # ── STEP 3: Publish ──────────────────────────────────────────
-    logger.info("[PHASE 4] 출력 에이전트 시작")
-    from agents.publisher import format_blog_post, format_threads_post
+    # Save analysis JSON
+    json_path = Path(output_dir) / "results.json"
+    serializable = [{k: v for k, v in r.items() if not hasattr(v, "to_dict")} for r in results]
+    json_path.write_text(json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8")
+    logger.info(f"분석 결과 저장: {json_path}")
 
-    blog_post = format_blog_post(results, run_date=run_date_display)
-    threads_post = format_threads_post(results, run_date=datetime.today().strftime("%m/%d"))
+    # ── PHASE 1 ──────────────────────────────────────────────────
+    ok1 = run_phase1(results, output_dir=output_dir, run_date=run_date)
+    if not ok1:
+        logger.error("PHASE 1 실패 — 파이프라인 중단")
+        sys.exit(1)
 
-    # Optional LLM enhancement
-    if enhance_llm:
-        blog_post = _enhance_with_llm(blog_post, results)
+    # ── PHASE 2 ──────────────────────────────────────────────────
+    ok2 = run_phase2(output_dir=output_dir)
+    if not ok2:
+        logger.error("PHASE 2 실패 — 파이프라인 중단")
+        sys.exit(1)
 
-    # ── Save outputs ─────────────────────────────────────────────
-    out_path = Path(output_dir)
-    out_path.mkdir(parents=True, exist_ok=True)
+    # ── PHASE 3 (병렬) ───────────────────────────────────────────
+    phase3_results = run_phase3(output_dir=output_dir)
+    if not any(phase3_results.values()):
+        logger.error("PHASE 3 전체 실패 — 파이프라인 중단")
+        sys.exit(1)
 
-    blog_file = out_path / f"blog_{run_date}.md"
-    threads_file = out_path / f"threads_{run_date}.txt"
-    json_file = out_path / f"results_{run_date}.json"
+    # ── PHASE 4 ──────────────────────────────────────────────────
+    notion_results = {}
+    if not skip_notion:
+        notion_results = run_phase4(output_dir=output_dir, run_date=run_date)
 
-    blog_file.write_text(blog_post, encoding="utf-8")
-    threads_file.write_text(threads_post, encoding="utf-8")
+    # ── 최종 요약 ────────────────────────────────────────────────
+    print(f"\n{'='*60}")
+    print("  📊 파이프라인 완료 — 최종 요약")
+    print(f"{'='*60}")
+    print(f"  PHASE 1 Blog Writer  : {'✅' if ok1 else '❌'}")
+    print(f"  PHASE 2 Reviewer     : {'✅' if ok2 else '❌'}")
+    for agent, ok in phase3_results.items():
+        print(f"  PHASE 3 {agent:<12}: {'✅' if ok else '❌'}")
+    print(f"  PHASE 4 Notion       : {'✅' if notion_results else '⏭️ 건너뜀 (--skip-notion)'}")
+    print()
+    print("  output/ 산출물:")
+    for f in sorted(Path(output_dir).glob("*.md")):
+        print(f"    {f.name} ({f.stat().st_size:,} bytes)")
+    if notion_results:
+        print("\n  Notion 페이지:")
+        for key, url in notion_results.items():
+            print(f"    {key}: {url}")
+    print()
 
-    # Serialize results (DataFrames replaced with summaries)
-    serializable = []
+    print("  추리 결과 상위 종목:")
     for r in results:
-        sr = {k: v for k, v in r.items() if not hasattr(v, "to_dict")}
-        serializable.append(sr)
-    json_file.write_text(
-        json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-
-    logger.info(f"출력 완료:")
-    logger.info(f"  블로그 원고  → {blog_file}")
-    logger.info(f"  스레드 본문  → {threads_file}")
-    logger.info(f"  분석 JSON   → {json_file}")
-
-    # Print summary to stdout
-    print("\n📊 최종 결과 요약")
-    print("-" * 40)
-    for r in results:
-        print(
-            f"  [{r['ticker']}] 확신도 {r['conviction_pct']}% — {r['hypothesis'][:50]}..."
-        )
+        print(f"    [{r['ticker']}] 확신도 {r['conviction_pct']}% — {r['hypothesis'][:45]}...")
     print()
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="외국인 순매수 셜록홈즈 오케스트레이터")
-    parser.add_argument(
-        "--tickers", nargs="+", default=None,
-        help="분석할 종목 코드 (기본: DEFAULT_UNIVERSE 30종목)",
-    )
-    parser.add_argument("--days", type=int, default=20, help="수집 기간 (거래일 기준, 기본 20)")
-    parser.add_argument("--top-n", type=int, default=5, help="출력할 상위 종목 수")
-    parser.add_argument("--output-dir", default="output", help="출력 디렉토리")
-    parser.add_argument("--z-threshold", type=float, default=2.0, help="Z-score 임계값")
-    parser.add_argument("--lookforward", type=int, default=20, help="선행성 검증 기간(일)")
-    parser.add_argument("--no-llm", action="store_true", help="LLM 내러티브 강화 비활성화")
+    parser = argparse.ArgumentParser(description="외국인 순매수 셜록홈즈 콘텐츠 멀티에이전트")
+    parser.add_argument("--tickers", nargs="+", default=None)
+    parser.add_argument("--days", type=int, default=20)
+    parser.add_argument("--top-n", type=int, default=5)
+    parser.add_argument("--output-dir", default="output")
+    parser.add_argument("--z-threshold", type=float, default=2.0)
+    parser.add_argument("--lookforward", type=int, default=20)
+    parser.add_argument("--skip-notion", action="store_true", help="Notion 업로드 건너뜀")
     return parser.parse_args()
 
 
@@ -241,5 +269,5 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         z_threshold=args.z_threshold,
         lookforward_days=args.lookforward,
-        enhance_llm=not args.no_llm,
+        skip_notion=args.skip_notion,
     )

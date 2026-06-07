@@ -1,0 +1,77 @@
+[
+  {
+    "ticker": "005930",
+    "conviction_pct": 0,
+    "hypothesis": "외국인의 정보 우위로 보이는 선행 매수 패턴 관찰 — 약한 확신도로 0% 가설",
+    "evidence": [],
+    "counter_scenarios": [
+      "선행성 이벤트가 관찰 기간 내 미발생 — 가설 근거 약함 [추측]",
+      "단순 패시브 펀드(ETF) 리밸런싱으로 인한 기계적 매수일 수 있음 [추측]",
+      "공매도 포지션 커버(숏 스퀴즈)로 인한 외국인 순매수 착시 가능성 [추측]",
+      "배당락·자사주 매입 일정에 따른 기술적 매수일 수 있음 [추측]"
+    ],
+    "t0_dates": [],
+    "lead_lag_events": [],
+    "noise_assessment": {
+      "short_sell_spike": false,
+      "passive_suspected": false,
+      "noise_score": 0.0,
+      "noise_reasons": []
+    },
+    "cross_check": {
+      "large_holding_reports": [],
+      "accumulation_signal": false
+    },
+    "as_of_date": "20260607"
+  },
+  {
+    "ticker": "000660",
+    "conviction_pct": 0,
+    "hypothesis": "외국인의 정보 우위로 보이는 선행 매수 패턴 관찰 — 약한 확신도로 0% 가설",
+    "evidence": [],
+    "counter_scenarios": [
+      "선행성 이벤트가 관찰 기간 내 미발생 — 가설 근거 약함 [추측]",
+      "단순 패시브 펀드(ETF) 리밸런싱으로 인한 기계적 매수일 수 있음 [추측]",
+      "공매도 포지션 커버(숏 스퀴즈)로 인한 외국인 순매수 착시 가능성 [추측]",
+      "배당락·자사주 매입 일정에 따른 기술적 매수일 수 있음 [추측]"
+    ],
+    "t0_dates": [],
+    "lead_lag_events": [],
+    "noise_assessment": {
+      "short_sell_spike": false,
+      "passive_suspected": false,
+      "noise_score": 0.0,
+      "noise_reasons": []
+    },
+    "cross_check": {
+      "large_holding_reports": [],
+      "accumulation_signal": false
+    },
+    "as_of_date": "20260607"
+  },
+  {
+    "ticker": "035420",
+    "conviction_pct": 0,
+    "hypothesis": "외국인의 정보 우위로 보이는 선행 매수 패턴 관찰 — 약한 확신도로 0% 가설",
+    "evidence": [],
+    "counter_scenarios": [
+      "선행성 이벤트가 관찰 기간 내 미발생 — 가설 근거 약함 [추측]",
+      "단순 패시브 펀드(ETF) 리밸런싱으로 인한 기계적 매수일 수 있음 [추측]",
+      "공매도 포지션 커버(숏 스퀴즈)로 인한 외국인 순매수 착시 가능성 [추측]",
+      "배당락·자사주 매입 일정에 따른 기술적 매수일 수 있음 [추측]"
+    ],
+    "t0_dates": [],
+    "lead_lag_events": [],
+    "noise_assessment": {
+      "short_sell_spike": false,
+      "passive_suspected": false,
+      "noise_score": 0.0,
+      "noise_reasons": []
+    },
+    "cross_check": {
+      "large_holding_reports": [],
+      "accumulation_signal": false
+    },
+    "as_of_date": "20260607"
+  }
+]
