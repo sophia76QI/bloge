@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>소피아의 거실</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;500;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3EAD3; --paper2:#E9DCBC; --ink:#1E2A24; --green:#1F3B2D;
+    --burgundy:#7A1F24; --gold:#B8893B; --muted:#5E5546;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#2a2a2a}
+  .poster{
+    width:1240px;height:1754px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.35), transparent 60%),
+      radial-gradient(ellipse at 0% 100%, rgba(120,90,40,.18), transparent 50%),
+      radial-gradient(ellipse at 100% 0%, rgba(120,90,40,.15), transparent 45%),
+      var(--paper);
+    color:var(--ink);font-family:'Noto Serif KR',serif;
+    padding:56px 64px;
+  }
+  .frame{position:absolute;inset:26px;border:3px solid var(--green);pointer-events:none}
+  .frame::after{content:"";position:absolute;inset:8px;border:1px solid var(--green)}
+  .corner{position:absolute;width:30px;height:30px;color:var(--gold)}
+  .c1{top:34px;left:34px}.c2{top:34px;right:34px;transform:scaleX(-1)}
+  .c3{bottom:34px;left:34px;transform:scaleY(-1)}.c4{bottom:34px;right:34px;transform:scale(-1)}
+
+  /* masthead */
+  .topline{display:flex;justify-content:space-between;align-items:center;
+    font-family:'Special Elite',monospace;font-size:19px;color:var(--muted);
+    padding:6px 8px 12px;border-bottom:1.5px solid var(--ink)}
+  .mast{text-align:center;padding:14px 0 6px}
+  .mast .eng{font-family:'Playfair Display',serif;font-weight:900;font-size:72px;letter-spacing:2px;color:var(--green);line-height:1}
+  .mast .kor{font-size:24px;letter-spacing:12px;color:var(--burgundy);font-weight:700;margin-top:12px}
+  .rule{height:7px;border-top:3px solid var(--ink);border-bottom:1px solid var(--ink);margin:10px 0 0}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1fr 340px;gap:34px;margin-top:30px;align-items:center}
+  .stamp{display:inline-block;font-family:'Special Elite',monospace;font-size:22px;color:var(--burgundy);
+    border:3px solid var(--burgundy);padding:6px 16px;transform:rotate(-3deg);letter-spacing:2px;opacity:.9}
+  h1{font-weight:900;font-size:76px;line-height:1.16;letter-spacing:-2px;margin-top:18px;color:var(--ink)}
+  h1 em{font-style:normal;color:var(--burgundy);position:relative}
+  h1 em::after{content:"";position:absolute;left:-4px;right:-4px;bottom:6px;height:16px;background:rgba(184,137,59,.35);z-index:-1}
+  .lede{font-size:25px;line-height:1.55;margin-top:18px;color:#2b2a25;font-weight:600}
+
+  .emblem{position:relative;width:340px;height:340px}
+  .emblem svg{width:100%;height:100%}
+
+  /* time block */
+  .time{margin-top:32px;background:var(--green);color:var(--paper);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:30px;padding:24px 40px;position:relative}
+  .time::before,.time::after{content:"";position:absolute;top:50%;width:26px;height:26px;background:var(--paper);border-radius:50%;transform:translateY(-50%)}
+  .time::before{left:-13px}.time::after{right:-13px}
+  .time .lbl{font-family:'Special Elite',monospace;font-size:20px;color:var(--gold);letter-spacing:3px;line-height:1.4}
+  .time .big{font-family:'Playfair Display',serif;font-weight:900;font-size:64px;letter-spacing:0;text-align:center;line-height:1;white-space:nowrap}
+  .time .big small{font-family:'Noto Serif KR',serif;font-size:30px;font-weight:700;margin-right:14px;letter-spacing:0}
+  .time .days{display:flex;gap:8px}
+  .time .days span{width:42px;height:42px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;color:var(--paper)}
+
+  /* section title */
+  .sec{display:flex;align-items:center;gap:18px;margin:36px 0 20px}
+  .sec .t{font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:32px;color:var(--burgundy);white-space:nowrap}
+  .sec .t b{font-family:'Noto Serif KR',serif;font-style:normal;font-size:26px;color:var(--ink);margin-left:10px}
+  .sec .line{flex:1;height:0;border-top:1.5px dashed var(--muted)}
+
+  /* case cards */
+  .cases{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .case{background:var(--paper2);border:1.5px solid var(--ink);padding:24px 20px 26px;position:relative;
+    box-shadow:6px 6px 0 rgba(31,59,45,.85)}
+  .case .no{font-family:'Special Elite',monospace;font-size:17px;color:var(--burgundy);letter-spacing:1px}
+  .case .ic{width:80px;height:80px;margin:8px auto 8px}
+  .case .ic svg{width:100%;height:100%}
+  .case h3{font-size:29px;font-weight:900;text-align:center;line-height:1.3;letter-spacing:-.5px}
+  .case p{font-family:'Noto Sans KR',sans-serif;font-size:18.5px;line-height:1.55;text-align:center;color:var(--muted);margin-top:10px}
+
+  /* quotes */
+  .quotes{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:26px}
+  /* tea note */
+  .tea{margin-top:26px;display:flex;align-items:center;gap:22px;padding:16px 26px;background:#fff8e6;
+    border:2px dashed var(--burgundy);position:relative}
+  .tea .tag{font-family:'Special Elite',monospace;font-size:18px;color:var(--paper);background:var(--burgundy);padding:6px 12px;letter-spacing:2px;white-space:nowrap}
+  .tea .ic{width:58px;height:58px;flex-shrink:0}.tea .ic svg{width:100%;height:100%}
+  .tea .msg{font-size:24px;font-weight:700;line-height:1.45;color:var(--ink)}
+  .tea .msg b{color:var(--burgundy)}
+  .q{border-left:5px solid var(--gold);padding:6px 0 6px 22px}
+  .q .txt{font-size:23px;line-height:1.6;font-weight:600;color:#26251f}
+  .q .who{font-family:'Playfair Display',serif;font-style:italic;font-size:21px;color:var(--burgundy);margin-top:10px}
+
+  /* footer */
+  .foot{position:absolute;left:64px;right:64px;bottom:52px;border-top:3px solid var(--ink);padding-top:18px;
+    display:flex;justify-content:space-between;align-items:center}
+  .foot .invite{font-size:30px;font-weight:900;color:var(--green)}
+  .foot .invite span{color:var(--burgundy)}
+  .foot .sig{text-align:right;font-family:'Special Elite',monospace;font-size:19px;color:var(--muted);line-height:1.5}
+  .foot .sig b{font-family:'Playfair Display',serif;font-style:italic;font-size:30px;color:var(--ink);font-weight:700}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="frame"></div>
+  <svg class="corner c1" viewBox="0 0 44 44"><path d="M2 42V12A10 10 0 0 1 12 2h30" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+  <svg class="corner c2" viewBox="0 0 44 44"><path d="M2 42V12A10 10 0 0 1 12 2h30" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+  <svg class="corner c3" viewBox="0 0 44 44"><path d="M2 42V12A10 10 0 0 1 12 2h30" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+  <svg class="corner c4" viewBox="0 0 44 44"><path d="M2 42V12A10 10 0 0 1 12 2h30" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+
+  <div class="topline"><span>CASE FILE · No. 221B</span><span>경제스터디 특별 공고</span><span>EST. SOPHIA'S STUDY</span></div>
+
+  <div class="mast">
+    <div class="eng">The Munger&nbsp;·&nbsp;Sherlock</div>
+    <div class="kor">소피아의 거실 수사본부</div>
+  </div>
+  <div class="rule"></div>
+
+  <div class="hero">
+    <div>
+      <span class="stamp">OPEN · 거실 개방</span>
+      <h1>평일 저녁,<br><em>소피아의 거실</em>을<br>열어둡니다</h1>
+      <p class="lede">언제든지 오셔서 차 한 잔 마시며<br>AI를 배우고, 책을 읽고, 신문을 펼쳐<br>세상 돌아가는 단서를 함께 찾아봐요.</p>
+    </div>
+    <div class="emblem">
+      <!-- 돋보기 + 찻잔 + 신문 엠블럼 -->
+      <svg viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="170" cy="170" r="160" fill="none" stroke="#1F3B2D" stroke-width="3"/>
+        <circle cx="170" cy="170" r="148" fill="none" stroke="#B8893B" stroke-width="1.5" stroke-dasharray="3 6"/>
+        <!-- newspaper -->
+        <g transform="translate(70 92) rotate(-8)">
+          <rect width="150" height="190" fill="#fff8e6" stroke="#1E2A24" stroke-width="3"/>
+          <rect x="14" y="14" width="122" height="20" fill="#1E2A24"/>
+          <g fill="#5E5546"><rect x="14" y="46" width="56" height="54"/>
+          <rect x="80" y="46" width="56" height="6"/><rect x="80" y="60" width="56" height="6"/><rect x="80" y="74" width="40" height="6"/><rect x="80" y="88" width="56" height="6"/>
+          <rect x="14" y="112" width="122" height="6"/><rect x="14" y="126" width="122" height="6"/><rect x="14" y="140" width="96" height="6"/><rect x="14" y="154" width="122" height="6"/><rect x="14" y="168" width="80" height="6"/></g>
+          <polyline points="18,94 32,78 44,86 66,56" fill="none" stroke="#7A1F24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- teacup -->
+        <g transform="translate(190 210)">
+          <path d="M14 8c0 0 2 -18 -6 -30M30 6c0 0 4 -18 -4 -30" fill="none" stroke="#5E5546" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+          <path d="M0 14h70v20c0 22-16 36-35 36S0 56 0 34z" fill="#7A1F24" stroke="#1E2A24" stroke-width="3"/>
+          <path d="M70 22c16 0 16 26 0 26" fill="none" stroke="#1E2A24" stroke-width="5"/>
+          <ellipse cx="35" cy="76" rx="50" ry="8" fill="#B8893B" stroke="#1E2A24" stroke-width="3"/>
+          <rect x="8" y="26" width="54" height="4" fill="#B8893B"/>
+        </g>
+        <!-- magnifying glass -->
+        <g transform="translate(150 70)">
+          <line x1="96" y1="96" x2="150" y2="150" stroke="#1E2A24" stroke-width="20" stroke-linecap="round"/>
+          <line x1="104" y1="104" x2="146" y2="146" stroke="#B8893B" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="60" cy="60" r="56" fill="rgba(255,255,255,.35)" stroke="#1F3B2D" stroke-width="12"/>
+          <circle cx="60" cy="60" r="56" fill="none" stroke="#B8893B" stroke-width="3"/>
+          <path d="M28 46a36 36 0 0 1 26-24" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+          <text x="60" y="76" text-anchor="middle" font-family="Playfair Display, serif" font-weight="900" font-size="44" fill="#7A1F24">AI</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="time">
+    <div class="lbl">OPEN<br>HOURS</div>
+    <div class="big"><small>평일 오후</small>7:00 – 10:00<small style="margin:0 0 0 12px">PM</small></div>
+    <div class="days"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span></div>
+  </div>
+
+  <div class="sec"><span class="t">Today's Investigations<b>거실에서 하는 일</b></span><span class="line"></span></div>
+
+  <div class="cases">
+    <div class="case">
+      <div class="no">CASE 01</div>
+      <div class="ic"><svg viewBox="0 0 100 100"><path d="M34 28c0 0 4-8-2-16M50 28c0 0 4-8-2-16" fill="none" stroke="#5E5546" stroke-width="4" stroke-linecap="round"/><path d="M18 36h52v14c0 18-12 28-26 28S18 68 18 50z" fill="#7A1F24" stroke="#1E2A24" stroke-width="3.5"/><path d="M70 42c14 0 14 22 0 22" fill="none" stroke="#1E2A24" stroke-width="5"/><ellipse cx="44" cy="84" rx="36" ry="6" fill="#B8893B" stroke="#1E2A24" stroke-width="3"/></svg></div>
+      <h3>차 한 잔의<br>여유</h3>
+      <p>따뜻한 차와 함께<br>편안하게 머무르기</p>
+    </div>
+    <div class="case">
+      <div class="no">CASE 02</div>
+      <div class="ic"><svg viewBox="0 0 100 100"><rect x="22" y="26" width="56" height="48" rx="10" fill="#1F3B2D" stroke="#1E2A24" stroke-width="3"/><circle cx="40" cy="48" r="7" fill="#F3EAD3"/><circle cx="60" cy="48" r="7" fill="#F3EAD3"/><rect x="38" y="60" width="24" height="5" rx="2.5" fill="#B8893B"/><line x1="50" y1="26" x2="50" y2="14" stroke="#1E2A24" stroke-width="4"/><circle cx="50" cy="11" r="5" fill="#7A1F24"/><rect x="12" y="42" width="10" height="16" rx="3" fill="#B8893B"/><rect x="78" y="42" width="10" height="16" rx="3" fill="#B8893B"/><path d="M34 80h32l-4 10H38z" fill="#5E5546"/></svg></div>
+      <h3>AI 배우고<br>실험하기</h3>
+      <p>직접 써보고 만들며<br>내 일에 적용하기</p>
+    </div>
+    <div class="case">
+      <div class="no">CASE 03</div>
+      <div class="ic"><svg viewBox="0 0 100 100"><path d="M10 26c14-6 30-6 40 2v56c-10-8-26-8-40-2z" fill="#1F3B2D" stroke="#1E2A24" stroke-width="3"/><path d="M90 26c-14-6-30-6-40 2v56c10-8 26-8 40-2z" fill="#F3EAD3" stroke="#1E2A24" stroke-width="3"/><g stroke="#5E5546" stroke-width="3"><line x1="58" y1="40" x2="82" y2="36"/><line x1="58" y1="50" x2="82" y2="46"/><line x1="58" y1="60" x2="76" y2="57"/></g><path d="M64 26v26l6-5 6 5V24" fill="#7A1F24"/></svg></div>
+      <h3>함께하는<br>독서</h3>
+      <p>멍거처럼 읽고<br>생각을 나누기</p>
+    </div>
+    <div class="case">
+      <div class="no">CASE 04</div>
+      <div class="ic"><svg viewBox="0 0 100 100"><rect x="14" y="18" width="62" height="70" fill="#fff8e6" stroke="#1E2A24" stroke-width="3.5"/><rect x="22" y="26" width="46" height="9" fill="#1E2A24"/><g fill="#5E5546"><rect x="22" y="42" width="20" height="18"/><rect x="46" y="42" width="22" height="4"/><rect x="46" y="50" width="22" height="4"/><rect x="22" y="66" width="46" height="4"/><rect x="22" y="74" width="34" height="4"/></g><circle cx="70" cy="66" r="15" fill="rgba(255,255,255,.5)" stroke="#1F3B2D" stroke-width="5"/><line x1="81" y1="77" x2="92" y2="88" stroke="#B8893B" stroke-width="7" stroke-linecap="round"/><polyline points="62,70 68,63 72,67 78,59" fill="none" stroke="#7A1F24" stroke-width="3" stroke-linecap="round"/></svg></div>
+      <h3>신문으로<br>경제 공부</h3>
+      <p>세상 돌아가는 이야기<br>단서처럼 읽어내기</p>
+    </div>
+  </div>
+
+  <div class="tea">
+    <span class="tag">TEA RULE</span>
+    <div class="ic"><svg viewBox="0 0 60 60"><rect x="14" y="8" width="32" height="8" rx="2" fill="#7A1F24"/><path d="M12 18h36v30a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6z" fill="#1F3B2D" stroke="#1E2A24" stroke-width="2"/><rect x="18" y="28" width="24" height="14" rx="2" fill="#F3EAD3"/><path d="M26 31c-3 4 0 8 4 8 4-2 4-7 0-9-1 2-3 1-4 1z" fill="#B8893B"/></svg></div>
+    <div class="msg">마시고 싶은 <b>나만의 차</b>는 <b>소피아의 주방</b>에 보관해 두시고,<br>오실 때마다 편하게 꺼내 드세요.</div>
+  </div>
+
+  <div class="quotes">
+    <div class="q">
+      <div class="txt">“평생 동안 늘 책을 읽지 않는<br>현명한 사람은 단 한 명도 보지 못했다.”</div>
+      <div class="who">— Charlie Munger</div>
+    </div>
+    <div class="q">
+      <div class="txt">“데이터! 데이터! 데이터!<br>점토 없이는 벽돌을 만들 수 없다네.”</div>
+      <div class="who">— Sherlock Holmes</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="invite">언제든지, <span>편하게</span> 들러주세요.</div>
+    <div class="sig">HOSTED BY<br><b>Sophia's Living Room</b></div>
+  </div>
+</div>
+</body>
+</html>
